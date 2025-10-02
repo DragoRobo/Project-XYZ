@@ -4,16 +4,15 @@ public class PlayerController : MonoBehaviour
 {
     public float moveSpeed = 5f;
     public float jumpForce = 6f;
-    public float flapForce = 6f; // new force for flappy bird movement
+    public float flapForce = 6f; // Flappy Bird movement
 
     public Sprite squareSprite;
     public Sprite flyingSprite;
-    public Sprite smallSprite;
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
 
-    private enum MorphState { Square, Flying, Small }
+    private enum MorphState { Square, Flying }
     private MorphState currentState = MorphState.Square;
     
     private GameObject carriedBlock;
@@ -30,12 +29,12 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // Movement (all forms)
+        // Movement
         float move = Input.GetAxis("Horizontal");
         rb.linearVelocity = new Vector2(move * moveSpeed, rb.linearVelocity.y);
 
-        // Jump (Square + Small only)
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && currentState != MorphState.Flying)
+        // Jump (Square only)
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && currentState == MorphState.Square)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
@@ -49,25 +48,18 @@ public class PlayerController : MonoBehaviour
         // Morph switching
         if (Input.GetKeyDown(KeyCode.Alpha1)) SetMorphState(MorphState.Square);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SetMorphState(MorphState.Flying);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SetMorphState(MorphState.Small);
 
-        // If carrying a block and we switch away from Square, auto-drop
+        // Auto-drop if not Square
         if (carriedBlock != null && currentState != MorphState.Square)
         {
             DropBlock();
         }
 
-        // Grab / Drop (only in Square form)
+        // Grab / Drop (Square only)
         if (currentState == MorphState.Square && Input.GetKeyDown(KeyCode.E))
         {
-            if (carriedBlock == null)
-            {
-                TryPickupBlock();
-            }
-            else
-            {
-                DropBlock();
-            }
+            if (carriedBlock == null) TryPickupBlock();
+            else DropBlock();
         }
     }
 
@@ -117,13 +109,7 @@ public class PlayerController : MonoBehaviour
 
             case MorphState.Flying:
                 spriteRenderer.sprite = flyingSprite;
-                transform.localScale = new Vector3(1f, 0.5f, 1f);
-                rb.gravityScale = 2f; // normal gravity, works with flaps
-                break;
-
-            case MorphState.Small:
-                spriteRenderer.sprite = smallSprite;
-                transform.localScale = Vector3.one * 0.2f;
+                transform.localScale = new Vector3(1.2f, 0.6f, 1f); // long rectangle
                 rb.gravityScale = 2f;
                 break;
         }
@@ -131,10 +117,7 @@ public class PlayerController : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.contacts[0].normal.y > 0.5f)
-        {
-            isGrounded = true;
-        }
+        if (collision.contacts[0].normal.y > 0.5f) isGrounded = true;
     }
 
     void OnCollisionExit2D(Collision2D collision)
