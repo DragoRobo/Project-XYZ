@@ -2187,7 +2187,7 @@ Transform:
   m_GameObject: {fileID: 712120589}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -6.61, y: -4.19, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5323,7 +5323,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6db99d64f6339d4cbe78d9474795fd8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
-  target: {fileID: 1904003094154607238, guid: af204999a2ce74641b43b4de94ec2d42, type: 3}
+  target: {fileID: 712120591}
   smoothSpeed: 2
   offset: {x: 0, y: 1, z: 0}
 --- !u!1 &1586953445
