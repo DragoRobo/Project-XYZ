@@ -6,6 +6,7 @@ public class MorphManager : MonoBehaviour
     public GameObject flyingForm;
     public GameObject powerForm;
     public GameObject agileForm;
+    public CameraFollow cameraFollow; // reference to camera follow script
 
     private GameObject currentForm;
 
@@ -29,15 +30,22 @@ public class MorphManager : MonoBehaviour
 
     void MorphTo(GameObject formPrefab)
     {
+        Vector3 spawnPos = transform.position;
+
         if (currentForm != null)
         {
-            Vector3 pos = currentForm.transform.position;
+            // Save position before destroying
+            spawnPos = currentForm.transform.position;
             Destroy(currentForm);
-            currentForm = Instantiate(formPrefab, pos, Quaternion.identity);
         }
-        else
+
+        // Spawn new form
+        currentForm = Instantiate(formPrefab, spawnPos, Quaternion.identity);
+
+        // Update camera to follow new form
+        if (cameraFollow != null)
         {
-            currentForm = Instantiate(formPrefab, transform.position, Quaternion.identity);
+            cameraFollow.target = currentForm.transform;
         }
     }
 }

@@ -1,72 +1,82 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D))]
-[RequireComponent(typeof(BoxCollider2D))]
 public class DefaultMovement : MonoBehaviour
 {
     public float moveSpeed = 5f;
-    public float jumpForce = 6f;
+    public float attackRange = 1f;
+    public int attackDamage = 1;
+    public float attackCooldown = 0.5f;
+    public LayerMask enemyLayer;
 
-    public Transform visual;        // assign Visual child
-    public Transform groundCheck;   // assign GroundCheck child
-    public float groundCheckRadius = 0.12f;
-    public LayerMask groundLayer;   // set this to your ground layer in inspector
+    public LineRenderer attackLine;   // Drag in inspector
+    public float lineDuration = 0.1f; // How long the line shows
 
-    Rigidbody2D rb;
-    SpriteRenderer visualSprite;
-    float horizontal;
-    bool wantJump;
+    private float lastAttackTime;
 
-    void Awake()
+    private Rigidbody2D rb;
+
+    void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        if (visual != null) visualSprite = visual.GetComponent<SpriteRenderer>();
-        else visualSprite = GetComponentInChildren<SpriteRenderer>();
+
+        // Setup LineRenderer if not set
+        if (attackLine != null)
+        {
+            attackLine.enabled = false;
+            attackLine.positionCount = 2;
+            attackLine.startWidth = 0.05f;
+            attackLine.endWidth = 0.05f;
+            attackLine.startColor = Color.red;
+            attackLine.endColor = Color.red;
+        }
     }
 
     void Update()
     {
-        horizontal = Input.GetAxisRaw("Horizontal");
+        float move = Input.GetAxis("Horizontal");
+        rb.linearVelocity = new Vector2(move * moveSpeed, rb.linearVelocity.y);
 
-        // Jump input
-        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
+        if (Input.GetMouseButtonDown(0) && Time.time > lastAttackTime + attackCooldown)
         {
-            wantJump = true;
-        }
-
-        // flip visual
-        if (visualSprite != null)
-        {
-            if (horizontal > 0.01f) visualSprite.flipX = false;
-            else if (horizontal < -0.01f) visualSprite.flipX = true;
+            Attack();
         }
     }
 
-    void FixedUpdate()
+    void Attack()
     {
-        // move
-        rb.linearVelocity = new Vector2(horizontal * moveSpeed, rb.linearVelocity.y);
+        lastAttackTime = Time.time;
 
-        // jump applied in physics
-        if (wantJump && IsGrounded())
+        // Check direction (facing right if localScale.x > 0)
+        Vector2 attackDir = transform.localScale.x > 0 ? Vector2.right : Vector2.left;
+        Vector2 attackOrigin = rb.position;
+
+        // Raycast for enemies
+        RaycastHit2D hit = Physics2D.Raycast(attackOrigin, attackDir, attackRange, enemyLayer);
+
+        if (hit.collider != null)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            wantJump = false;
+            EnemyHealth enemy = hit.collider.GetComponent<EnemyHealth>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(attackDamage);
+            }
+        }
+
+        // Show red line
+        if (attackLine != null)
+        {
+            StartCoroutine(ShowAttackLine(attackOrigin, attackOrigin + attackDir * attackRange));
         }
     }
 
-    bool IsGrounded()
+    System.Collections.IEnumerator ShowAttackLine(Vector2 start, Vector2 end)
     {
-        if (groundCheck == null) return false;
-        return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer) != null;
-    }
+        attackLine.SetPosition(0, start);
+        attackLine.SetPosition(1, end);
+        attackLine.enabled = true;
 
-    void OnDrawGizmosSelected()
-    {
-        if (groundCheck != null)
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
-        }
+        yield return new WaitForSeconds(lineDuration);
+
+        attackLine.enabled = false;
     }
 }
