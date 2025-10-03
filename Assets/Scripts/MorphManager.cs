@@ -22,9 +22,9 @@ public class MorphManager : MonoBehaviour
             MorphTo(defaultForm);
         if (Input.GetKeyDown(KeyCode.Alpha2))
             MorphTo(flyingForm);
-        if (Input.GetKeyDown(KeyCode.Alpha3))
-            MorphTo(powerForm);
         if (Input.GetKeyDown(KeyCode.Alpha4))
+            MorphTo(powerForm);
+        if (Input.GetKeyDown(KeyCode.Alpha3))
             MorphTo(agileForm);
     }
 
