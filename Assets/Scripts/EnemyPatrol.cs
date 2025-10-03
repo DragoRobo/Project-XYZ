@@ -1,50 +1,76 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class EnemyPatrol : MonoBehaviour
 {
-    public float speed = 2f;               // Patrol speed
-    public Transform groundCheck;          // Empty child transform to detect ground
-    public float groundCheckDistance = 1f; // How far to check below
-    public LayerMask groundLayer;          // What counts as ground
+    public float speed = 2f;
+    public Transform groundCheck;        // child placed slightly ahead of feet
+    public float groundCheckDistance = 0.9f;
+    public LayerMask groundLayer;        // assign platforms/ground
+    public LayerMask obstacleLayer;      // assign walls/obstacles (so no "tag" required)
 
-    private Rigidbody2D rb;
-    private bool movingRight = true;
+    Rigidbody2D rb;
+    bool movingRight = true;
 
-    void Start()
+    void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
     }
 
+    void FixedUpdate()
+    {
+        // Move horizontally
+        float h = movingRight ? 1f : -1f;
+        rb.linearVelocity = new Vector2(h * speed, rb.linearVelocity.y);
+    }
+
     void Update()
     {
-        // Move enemy left or right
-        rb.linearVelocity = new Vector2((movingRight ? 1 : -1) * speed, rb.linearVelocity.y);
+        // Ground check a little ahead of the enemy depending on facing
+        Vector2 checkPos = groundCheck.position;
+        // cast downwards from forward edge
+        RaycastHit2D groundInfo = Physics2D.Raycast(checkPos, Vector2.down, groundCheckDistance, groundLayer);
 
-        // Check ground ahead
-        RaycastHit2D groundInfo = Physics2D.Raycast(groundCheck.position, Vector2.down, groundCheckDistance, groundLayer);
-
-        if (groundInfo.collider == false) // No ground? Turn around
+        if (groundInfo.collider == null)
         {
             Flip();
+        }
+    }
+
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        // If collided object is in obstacleLayer, flip
+        if ((obstacleLayer.value & (1 << col.gameObject.layer)) != 0)
+        {
+            Flip();
+            return;
+        }
+
+        // Also if contact normal suggests a frontal hit, flip
+        foreach (var contact in col.contacts)
+        {
+            if (Mathf.Abs(contact.normal.x) > 0.5f)
+            {
+                Flip();
+                break;
+            }
         }
     }
 
     void Flip()
     {
         movingRight = !movingRight;
-
-        // Mirror the enemy sprite
-        Vector3 localScale = transform.localScale;
-        localScale.x *= -1;
-        transform.localScale = localScale;
+        Vector3 s = transform.localScale;
+        s.x = Mathf.Abs(s.x) * (movingRight ? 1f : -1f);
+        transform.localScale = s;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    void OnDrawGizmosSelected()
     {
-        // Turn around if hit a wall
-        if (collision.collider.CompareTag("Wall"))
+        if (groundCheck != null)
         {
-            Flip();
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(groundCheck.position, groundCheck.position + Vector3.down * groundCheckDistance);
         }
     }
 }

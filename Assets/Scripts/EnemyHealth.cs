@@ -3,27 +3,22 @@ using UnityEngine;
 public class EnemyHealth : MonoBehaviour
 {
     public int maxHealth = 3;
-    private int currentHealth;
+    int current;
 
     void Start()
     {
-        currentHealth = maxHealth;
+        current = maxHealth;
     }
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(int dmg)
     {
-        currentHealth -= damage;
-        Debug.Log(gameObject.name + " took " + damage + " damage! Remaining HP: " + currentHealth);
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+        current -= dmg;
+        Debug.Log($"{gameObject.name} took {dmg}. HP left: {current}");
+        if (current <= 0) Die();
     }
 
     void Die()
     {
-        // For now just destroy, later we can add death animation
         Destroy(gameObject);
     }
 }
