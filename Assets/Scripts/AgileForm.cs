@@ -31,6 +31,9 @@ public class AgileFormController : MonoBehaviour
     private bool wallSliding;
     private float cantGrabUntil;
 
+    // 🟦 Track last wall jumped from
+    private int lastWallDir = 0; // -1 = left, +1 = right, 0 = none
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -40,20 +43,28 @@ public class AgileFormController : MonoBehaviour
     {
         moveInput = Input.GetAxisRaw("Horizontal");
 
-        // 🟦 Ground jump (only if grounded)
+        // 🟦 Ground jump
         if (Input.GetKeyDown(KeyCode.Space) && grounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            lastWallDir = 0; // reset wall memory when on ground
         }
 
-        // 🟦 Wall jump (only if sliding)
+        // 🟦 Wall jump
         else if (Input.GetKeyDown(KeyCode.Space) && wallSliding)
         {
-            int dir = onLeftWall ? 1 : -1; // jump away from wall
-            rb.linearVelocity = new Vector2(dir * wallJumpPush, wallJumpUp);
+            int dir = onLeftWall ? -1 : 1; // which wall we're on
 
-            wallSliding = false;
-            cantGrabUntil = Time.time + regrabDelay;
+            // Only allow jump if it's a *different* wall than last time
+            if (dir != lastWallDir)
+            {
+                rb.linearVelocity = new Vector2(-dir * wallJumpPush, wallJumpUp);
+
+                wallSliding = false;
+                cantGrabUntil = Time.time + regrabDelay;
+
+                lastWallDir = dir; // remember this wall
+            }
         }
     }
 
@@ -70,12 +81,15 @@ public class AgileFormController : MonoBehaviour
         onRightWall = Physics2D.OverlapCircle(wallCheckRight.position, wallCheckRadius, wallLayer);
         bool touchingWall = onLeftWall || onRightWall;
 
-        // 🟦 Wall slide (ONLY if in air, touching wall, and not locked out)
+        // 🟦 Reset last wall if grounded
+        if (grounded) lastWallDir = 0;
+
+        // 🟦 Wall slide (only if airborne, touching wall, not locked)
         if (!grounded && touchingWall && Time.time >= cantGrabUntil)
         {
             wallSliding = true;
 
-            // force downward velocity at slow speed
+            // clamp downward velocity
             if (rb.linearVelocity.y < -wallSlideSpeed)
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, -wallSlideSpeed);
